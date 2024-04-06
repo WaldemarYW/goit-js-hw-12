@@ -20,6 +20,10 @@ let allImages = [];
 form.addEventListener('submit', async function (event) {
   event.preventDefault();
 
+  galleryElement.innerHTML = '';
+  allImages = [];
+  page = 1;
+
   searchTerm = form.querySelector('input[name="search"]').value.trim();
   if (!searchTerm) {
     iziToast.error({
@@ -31,7 +35,6 @@ form.addEventListener('submit', async function (event) {
   }
 
   try {
-    page = 1;
     const images = await fetchImages(searchTerm, page);
     if (images.length === 0) {
       iziToast.warning({
@@ -42,9 +45,17 @@ form.addEventListener('submit', async function (event) {
       });
       return;
     }
-    allImages = images;
+    allImages.push(...images);
     renderImages(allImages);
     lightbox.refresh();
+
+    const cardHeight =
+      galleryElement.firstElementChild.getBoundingClientRect().height;
+    window.scrollBy({
+      top: cardHeight * 2,
+      behavior: 'smooth',
+    });
+
     if (images.length >= 15) {
       loadMoreButton.style.display = 'block';
     } else {
@@ -66,39 +77,16 @@ loadMoreButton.addEventListener('click', async function () {
   try {
     page++;
     const images = await fetchImages(searchTerm, page);
-    allImages = allImages.concat(images);
+    allImages.push(...images);
     renderImages(allImages);
     lightbox.refresh();
     loader.style.display = 'none';
     if (images.length < 15) {
       loadMoreButton.style.display = 'none';
     }
-  } catch (error) {
-    console.error('Error loading more images:', error);
-    iziToast.error({
-      title: 'Error',
-      message:
-        'An error occurred while loading more images. Please try again later.',
-      position: 'topCenter',
-    });
-    loader.style.display = 'none';
-  }
-});
-loadMoreButton.addEventListener('click', async function () {
-  loader.style.display = 'block';
-  try {
-    page++;
-    const images = await fetchImages(searchTerm, page);
-    allImages = allImages.concat(images);
-    renderImages(allImages);
-    lightbox.refresh();
-    loader.style.display = 'none';
-    if (images.length < 15) {
-      loadMoreButton.style.display = 'none';
-    }
-    const cardHeight = galleryElement
-      .querySelector('.card')
-      .getBoundingClientRect().height;
+
+    const cardHeight =
+      galleryElement.lastElementChild.getBoundingClientRect().height;
     window.scrollBy({
       top: cardHeight * 2,
       behavior: 'smooth',
